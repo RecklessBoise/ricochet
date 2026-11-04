@@ -1,0 +1,87 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure (universal binary)
+        run: cmake -B build -G Xcode -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DRICOCHET_BUILD_SNAPSHOT=OFF
+
+      - name: Build plug-ins and tests
+        run: cmake --build build --config Release --parallel 4
+
+      - name: Unit tests
+        run: ./build/RicochetTests_artefacts/Release/RicochetTests
+
+      - name: Validate Audio Unit
+        run: |
+          killall -9 AudioComponentRegistrar || true
+          auval -v aumu Rcht Rckb
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          cd build/Ricochet_artefacts/Release
+          codesign --force --deep -s - AU/Ricochet.component VST3/Ricochet.vst3 Standalone/Ricochet.app
+          ditto -c -k --keepParent AU/Ricochet.component "$GITHUB_WORKSPACE/dist/Ricochet-macOS-AU.zip"
+          ditto -c -k --keepParent VST3/Ricochet.vst3 "$GITHUB_WORKSPACE/dist/Ricochet-macOS-VST3.zip"
+          ditto -c -k --keepParent Standalone/Ricochet.app "$GITHUB_WORKSPACE/dist/Ricochet-macOS-Standalone.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ricochet-macOS
+          path: dist/*.zip
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: cmake -B build -DRICOCHET_COPY_PLUGINS=OFF -DRICOCHET_BUILD_SNAPSHOT=OFF
+
+      - name: Build
+        run: cmake --build build --config Release --parallel 4
+
+      - name: Unit tests
+        run: ./build/RicochetTests_artefacts/Release/RicochetTests.exe
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path build/Ricochet_artefacts/Release/VST3/Ricochet.vst3 -DestinationPath dist/Ricochet-Windows-VST3.zip
+          Compress-Archive -Path build/Ricochet_artefacts/Release/Standalone/Ricochet.exe -DestinationPath dist/Ricochet-Windows-Standalone.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ricochet-Windows
+          path: dist/*.zip
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
