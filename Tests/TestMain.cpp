@@ -5,6 +5,7 @@
 #include "Core/RenderEngine.h"
 #include "Core/OfflineRenderer.h"
 #include "Synth/Synth.h"
+#include "Core/Transport.h"
 
 using namespace ric;
 
@@ -341,6 +342,96 @@ struct AudioTests : juce::UnitTest
     }
 };
 
+
+struct TransportTests : juce::UnitTest
+{
+    TransportTests() : juce::UnitTest ("DAW Sync", "Ricochet") {}
+
+    void runTest() override
+    {
+        HostInfo host;
+        host.available = true; host.bpm = 97.0; host.hasPpq = true; host.ppq = 12.5;
+
+        beginTest ("sync off: own play button and own tempo");
+        {
+            TransportState st;
+            host.playing = true;
+            auto d = decideTransport (false, false, 140.0, host, st);
+            expect (! d.run);
+            expectEquals (d.bpm, 140.0);
+            expectEquals (d.hostBeat, -1.0);
+            expect (! d.following);
+            d = decideTransport (false, true, 140.0, host, st);
+            expect (d.run);
+        }
+
+        beginTest ("sync on: DAW play starts, DAW stop stops, tempo follows");
+        {
+            TransportState st;
+            host.playing = false;
+            auto d = decideTransport (true, true, 140.0, host, st);
+            expect (d.following);
+            expect (! d.run, "must stay stopped while the DAW is stopped, even if Play is on");
+            expectEquals (d.bpm, 97.0);
+
+            host.playing = true;
+            d = decideTransport (true, false, 140.0, host, st);
+            expect (d.run, "DAW play must start the plug-in even if its own Play is off");
+            expect (d.reset, "each DAW play restarts from the initial state");
+            expectEquals (d.hostBeat, 12.5);
+            expectEquals (d.bpm, 97.0);
+
+            d = decideTransport (true, false, 140.0, host, st);
+            expect (d.run);
+            expect (! d.reset, "no reset while the DAW keeps playing");
+
+            host.bpm = 174.0;
+            d = decideTransport (true, false, 140.0, host, st);
+            expectEquals (d.bpm, 174.0, "tempo changes in the DAW are followed live");
+
+            host.playing = false;
+            d = decideTransport (true, true, 140.0, host, st);
+            expect (! d.run);
+            host.playing = true;
+            d = decideTransport (true, true, 140.0, host, st);
+            expect (d.reset, "a new DAW play restarts again");
+        }
+
+        beginTest ("sync on without a host (standalone): runs free");
+        {
+            TransportState st;
+            HostInfo none;
+            const auto d = decideTransport (true, true, 110.0, none, st);
+            expect (d.run);
+            expect (! d.following);
+            expectEquals (d.bpm, 110.0);
+        }
+
+        beginTest ("host beat drives emitters in sync");
+        {
+            RenderEngine eng;
+            eng.prepare (kSr, 512);
+            Scene s;
+            Emitter e; e.x = 0.5f; e.y = 0.5f; e.rate = Rate::Quarter; e.life = 1.0f;
+            s.addEmitter (e);
+            eng.setScene (s);
+            eng.reset();
+            std::vector<float> l (512), r (512);
+            eng.process (l.data(), r.data(), 512, 120.0, 3.90, nullptr, nullptr);
+            const int first = eng.getSimulation().numAliveBalls();
+            double beat = 3.90;
+            for (int i = 0; i < 6; ++i)
+            {
+                beat += 512.0 * 2.0 / kSr;
+                eng.process (l.data(), r.data(), 512, 120.0, beat, nullptr, nullptr);
+            }
+            expectEquals (first, 1);
+            expectEquals (eng.getSimulation().numAliveBalls(), 2, "a ball must be launched on the DAW's next beat");
+        }
+    }
+};
+
+static TransportTests transportTests;
 static ScaleTests scaleTests;
 static PhysicsTests physicsTests;
 static PresetTests presetTests;

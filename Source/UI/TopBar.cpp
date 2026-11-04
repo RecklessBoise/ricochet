@@ -3,7 +3,7 @@
 TopBar::TopBar (RicochetProcessor& p, SceneCanvas& c) : processor (p), canvas (c)
 {
     for (auto* b : { &presetButton, &prevButton, &nextButton, &saveButton, &randomButton, &mutateButton,
-                     &undoButton, &redoButton, &playButton, &resetButton, &recButton, &bounceButton })
+                     &undoButton, &redoButton, &playButton, &resetButton, &recButton, &bounceButton, &syncButton })
         addAndMakeVisible (b);
 
     presetButton.onClick = [this] { showPresetMenu(); };
@@ -20,6 +20,26 @@ TopBar::TopBar (RicochetProcessor& p, SceneCanvas& c) : processor (p), canvas (c
 
     playButton.setClickingTogglesState (true);
     playAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (processor.apvts, ParamIDs::running, playButton);
+
+    syncButton.setClickingTogglesState (true);
+    syncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (processor.apvts, ParamIDs::syncHost, syncButton);
+    syncButton.setTooltip ("DAW Sync: play / stop follow your DAW, and the tempo and bar grid follow the DAW tempo.\n"
+                           "Each DAW play restarts the scene from the same state.");
+
+    tempoSlider.setSliderStyle (juce::Slider::LinearBar);
+    tempoSlider.setTextBoxStyle (juce::Slider::TextBoxLeft, false, 90, 28);
+    tempoSlider.setColour (juce::Slider::trackColourId, Theme::accent.withAlpha (0.22f));
+    tempoSlider.setColour (juce::Slider::backgroundColourId, Theme::panelHi);
+    tempoSlider.setTooltip ("Internal tempo (used when DAW Sync is off). Drag or double-click to type.");
+    tempoAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processor.apvts, ParamIDs::tempo, tempoSlider);
+    addAndMakeVisible (tempoSlider);
+
+    tempoLabel.setJustificationType (juce::Justification::centred);
+    tempoLabel.setFont (Theme::font (13.0f, true));
+    tempoLabel.setColour (juce::Label::textColourId, Theme::accent);
+    tempoLabel.setColour (juce::Label::backgroundColourId, Theme::panelHi);
+    tempoLabel.setTooltip ("Tempo from your DAW");
+    addChildComponent (tempoLabel);
 
     randomButton.setColour (juce::TextButton::buttonColourId, Theme::accent2.withAlpha (0.45f));
     recButton.setColour (juce::TextButton::buttonOnColourId, Theme::rec);
@@ -56,7 +76,7 @@ void TopBar::updateButtons()
     presetButton.setButtonText (processor.getPresetName() + juce::String (juce::CharPointer_UTF8 ("   \xe2\x96\xbe")));
     undoButton.setEnabled (processor.canUndo());
     redoButton.setEnabled (processor.canRedo());
-    playButton.setButtonText (playButton.getToggleState() ? "Pause" : "Play");
+    updateTransportDisplay();
 }
 
 void TopBar::timerCallback()
@@ -83,8 +103,29 @@ void TopBar::timerCallback()
         const auto f = processor.takeFinishedBounce();
         if (f.existsAsFile() && onNewRecording) onNewRecording (f);
     }
-    playButton.setButtonText (playButton.getToggleState() ? "Pause" : "Play");
+    updateTransportDisplay();
     repaint (logoArea);
+}
+
+void TopBar::updateTransportDisplay()
+{
+    const bool syncOn = syncButton.getToggleState();
+    const bool following = processor.isFollowingHost();
+
+    tempoSlider.setVisible (! following);
+    tempoLabel.setVisible (following);
+    if (following)
+        tempoLabel.setText ("DAW " + juce::String (processor.getCurrentBpm(), 1) + " BPM", juce::dontSendNotification);
+
+    // While the DAW drives the transport the local Play button is only a status light.
+    playButton.setEnabled (! following);
+    if (following)
+        playButton.setButtonText (processor.isHostPlaying() ? juce::String (juce::CharPointer_UTF8 ("\xe2\x96\xb6 DAW"))
+                                                            : juce::String (juce::CharPointer_UTF8 ("\xe2\x96\xa0 DAW")));
+    else
+        playButton.setButtonText (playButton.getToggleState() ? "Pause" : "Play");
+
+    syncButton.setButtonText (syncOn && ! processor.hostHasTransport() ? "DAW Sync (no host)" : "DAW Sync");
 }
 
 void TopBar::toggleRecord()
@@ -212,15 +253,15 @@ void TopBar::resized()
 
     auto place = [&r] (juce::Component& c, int w) { c.setBounds (r.removeFromLeft (w).reduced (2, 0)); };
     place (prevButton, 30);
-    place (presetButton, juce::jlimit (160, 260, r.getWidth() / 4));
+    place (presetButton, juce::jlimit (150, 240, r.getWidth() / 5));
     place (nextButton, 30);
     place (saveButton, 56);
     r.removeFromLeft (10);
-    place (randomButton, 76);
-    place (mutateButton, 70);
+    place (randomButton, 72);
+    place (mutateButton, 66);
     r.removeFromLeft (10);
-    place (undoButton, 56);
-    place (redoButton, 56);
+    place (undoButton, 50);
+    place (redoButton, 50);
 
     auto right = r;
     auto placeR = [&right] (juce::Component& c, int w) { c.setBounds (right.removeFromRight (w).reduced (2, 0)); };
@@ -229,4 +270,9 @@ void TopBar::resized()
     right.removeFromRight (8);
     placeR (resetButton, 70);
     placeR (playButton, 64);
+    right.removeFromRight (6);
+    auto tempoArea = right.removeFromRight (100).reduced (2, 2);
+    tempoSlider.setBounds (tempoArea);
+    tempoLabel.setBounds (tempoArea);
+    placeR (syncButton, 84);
 }

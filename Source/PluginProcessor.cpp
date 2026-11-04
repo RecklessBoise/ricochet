@@ -40,7 +40,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout RicochetProcessor::createLay
                                                        NormalisableRange<float> (0.1f, 3.0f, 0.0f, 0.5f), 1.0f,
                                                        AudioParameterFloatAttributes().withLabel ("x")));
     layout.add (std::make_unique<AudioParameterBool> (pid (ParamIDs::running), "Play", true));
-    layout.add (std::make_unique<AudioParameterBool> (pid (ParamIDs::syncHost), "Sync to host", false));
+    layout.add (std::make_unique<AudioParameterBool> (pid (ParamIDs::syncHost), "DAW Sync", false));
+    layout.add (std::make_unique<AudioParameterFloat> (pid (ParamIDs::tempo), "Tempo",
+                                                       NormalisableRange<float> (40.0f, 240.0f, 0.1f), 120.0f,
+                                                       AudioParameterFloatAttributes().withLabel ("BPM")
+                                                           .withStringFromValueFunction ([] (float v, int) { return String (v, 1) + " BPM"; })));
     return layout;
 }
 
@@ -62,6 +66,7 @@ RicochetProcessor::RicochetProcessor()
     pSpeed      = apvts.getRawParameterValue (ParamIDs::speed);
     pRunning    = apvts.getRawParameterValue (ParamIDs::running);
     pSync       = apvts.getRawParameterValue (ParamIDs::syncHost);
+    pTempo      = apvts.getRawParameterValue (ParamIDs::tempo);
 
     refreshUserPresets();
     const auto initial = ric::defaultScene();
@@ -120,20 +125,27 @@ void RicochetProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     const int numSamples = buffer.getNumSamples();
     const double sr = getSampleRate() > 0 ? getSampleRate() : 48000.0;
 
-    // Transport
-    double bpm = lastBpm;
-    double hostBeat = -1.0;
-    bool hostPlaying = false;
-    const bool sync = pSync->load() > 0.5f;
+    // Transport: DAW Sync follows the host's play/stop, tempo and bar position.
+    ric::HostInfo host;
     if (auto* ph = getPlayHead())
         if (auto pos = ph->getPosition())
-        {
-            if (auto b = pos->getBpm()) bpm = *b;
-            hostPlaying = pos->getIsPlaying();
-            if (auto ppq = pos->getPpqPosition())
-                if (sync && hostPlaying) hostBeat = *ppq;
-        }
+            if (auto b = pos->getBpm())
+            {
+                host.available = true;
+                host.bpm = *b;
+                host.playing = pos->getIsPlaying();
+                if (auto ppq = pos->getPpqPosition()) { host.hasPpq = true; host.ppq = *ppq; }
+            }
+
+    const auto transport = ric::decideTransport (pSync->load() > 0.5f, pRunning->load() > 0.5f,
+                                                 (double) pTempo->load(), host, transportState);
+    const double bpm = transport.bpm;
+    const double hostBeat = transport.hostBeat;
     lastBpm = bpm;
+    currentBpm = bpm;
+    followingHost = transport.following;
+    hostPlayingNow = host.playing;
+    hostAvailable = host.available;
 
     // Pick up UI changes
     if (sceneDirty.load())
@@ -146,9 +158,8 @@ void RicochetProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         }
     }
 
-    if (sync && hostPlaying && ! wasHostPlaying)
-        resetRequested = true;     // every host playback starts from the same state
-    wasHostPlaying = hostPlaying;
+    if (transport.reset)
+        resetRequested = true;     // every DAW playback starts from the same state
 
     if (resetRequested.exchange (false))
         engine.reset();
@@ -158,9 +169,7 @@ void RicochetProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     const int fr = fireRequest.exchange (-1);
     if (fr >= 0) engine.getSimulation().fireEmitter (fr);
 
-    bool run = pRunning->load() > 0.5f;
-    if (sync && ! hostPlaying) run = false;
-    engine.setRunning (run);
+    engine.setRunning (transport.run);
     engine.setSound (currentSound());
 
     // Render in chunks that fit the scratch buffer

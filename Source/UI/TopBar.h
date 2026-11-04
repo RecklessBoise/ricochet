@@ -33,6 +33,12 @@ private:
     juce::TextButton undoButton { "Undo" }, redoButton { "Redo" };
     juce::TextButton playButton { "Play" }, resetButton { "Restart" };
     juce::TextButton recButton { "Rec" }, bounceButton { "Bounce" };
+    juce::TextButton syncButton { "DAW Sync" };
+    juce::Slider tempoSlider;
+    juce::Label tempoLabel;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> syncAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> tempoAttachment;
+    void updateTransportDisplay();
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> playAttachment;
     std::unique_ptr<juce::AlertWindow> saveDialog;
 

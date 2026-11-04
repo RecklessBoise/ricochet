@@ -15,7 +15,7 @@ RicochetEditor::RicochetEditor (RicochetProcessor& p)
 
     setWantsKeyboardFocus (true);
     setResizable (true, true);
-    setResizeLimits (1000, 680, 2400, 1600);
+    setResizeLimits (1200, 700, 2400, 1600);
     setSize (1260, 820);
 }
 

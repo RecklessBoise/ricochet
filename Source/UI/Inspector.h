@@ -115,7 +115,7 @@ private:
     juce::ComboBox delayDiv;
     juce::Label delayDivLabel;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> delayDivAttachment;
-    juce::ToggleButton sync { "Sync to host transport" };
+    juce::ToggleButton sync { "DAW Sync (play / stop + tempo)" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> syncAttachment;
 };
 

@@ -6,6 +6,7 @@
 #include "Core/Randomizer.h"
 #include "Core/OfflineRenderer.h"
 #include "Recorder.h"
+#include "Core/Transport.h"
 #include <vector>
 
 namespace ParamIDs
@@ -24,6 +25,7 @@ namespace ParamIDs
     inline constexpr const char* speed      = "speed";
     inline constexpr const char* running    = "running";
     inline constexpr const char* syncHost   = "syncHost";
+    inline constexpr const char* tempo      = "tempo";
 }
 
 /** What the UI needs to draw the moving parts, copied from the audio thread each block. */
@@ -106,6 +108,12 @@ public:
     void copySnapshot (LiveSnapshot& out);
     int popHits (UiHit* dest, int max);
 
+    // DAW sync status for the UI
+    bool isFollowingHost() const noexcept { return followingHost.load(); }
+    bool isHostPlaying() const noexcept   { return hostPlayingNow.load(); }
+    bool hostHasTransport() const noexcept { return hostAvailable.load(); }
+    double getCurrentBpm() const noexcept { return currentBpm.load(); }
+
     // Recording & bounce
     Recorder& getRecorder() noexcept { return recorder; }
     bool startBounce (double bars);
@@ -141,7 +149,6 @@ private:
     ric::RenderEngine engine;
     juce::AudioBuffer<float> temp;
     juce::MidiBuffer chunkMidi, midiOutBuffer;
-    bool wasHostPlaying = false;
 
     // audio -> message
     juce::SpinLock snapshotLock;
@@ -164,6 +171,10 @@ private:
     std::atomic<float>* pDelayDiv = nullptr; std::atomic<float>* pFeedback = nullptr;
     std::atomic<float>* pDrive = nullptr;  std::atomic<float>* pSpeed = nullptr;
     std::atomic<float>* pRunning = nullptr; std::atomic<float>* pSync = nullptr;
+    std::atomic<float>* pTempo = nullptr;
+    ric::TransportState transportState;
+    std::atomic<bool> followingHost { false }, hostPlayingNow { false }, hostAvailable { false };
+    std::atomic<double> currentBpm { 120.0 };
 
     double lastBpm = 120.0;
 

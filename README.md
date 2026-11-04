@@ -44,7 +44,14 @@
 
 Les réglages détaillés sont dans le panneau de droite : **Object** (objet sélectionné), **World** (espace, gravité, gamme, quantize), **Sound** (paramètres automatisables du son) et **Random**.
 
-**Sync to host transport** (onglet Sound) : la simulation suit la lecture du DAW et repart du même état à chaque Play, ce qui donne exactement la même performance à chaque fois.
+### Synchro DAW
+
+Bouton **DAW Sync** dans la barre du haut :
+
+- **activé** : quand tu appuies sur Play dans ton DAW, le plugin démarre ; quand tu fais Stop, il s'arrête. Le **BPM suit celui du DAW** (y compris les changements de tempo) et les émetteurs sont calés sur les temps et mesures du DAW. Chaque Play repart du même état de départ, donc la même performance se rejoue à l'identique. Le bouton Play du plugin devient un simple témoin (▶ DAW / ■ DAW) et le tempo affiche « DAW xxx BPM ».
+- **désactivé** : le plugin tourne librement avec son propre bouton Play et son **tempo interne** (40–240 BPM, réglable à côté du bouton, automatisable).
+
+Dans l'application Standalone il n'y a pas de DAW : le plugin utilise toujours son tempo interne.
 
 Les prises sont dans `~/Music/Ricochet/Recordings`, les presets utilisateur dans `~/Music/Ricochet/Presets` (fichiers `.ricochet` en JSON).
 
