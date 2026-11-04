@@ -1,10 +1,10 @@
-# Ricochet
+# Reckless Ricochet
 
 **Instrument VST3 / AU génératif : des billes rebondissent sur des obstacles, chaque obstacle touché joue une note.**
 
 *Generative VST3 / AU instrument — marbles bounce around a space you design, every obstacle they hit plays a note. (English summary at the bottom.)*
 
-![Ricochet – Pinball](docs/screenshot-pinball.png)
+![Reckless Ricochet – Pinball](docs/screenshot-pinball.png)
 
 | | |
 |---|---|
@@ -52,9 +52,9 @@ Les prises sont dans `~/Music/Ricochet/Recordings`, les presets utilisateur dans
 
 Télécharger les binaires depuis l'onglet **Actions** (artefacts de build) ou **Releases**.
 
-- macOS : copier `Ricochet.component` dans `~/Library/Audio/Plug-Ins/Components` et `Ricochet.vst3` dans `~/Library/Audio/Plug-Ins/VST3`. Les binaires ne sont pas notarisés : si macOS les bloque, lancer
-  `xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/Components/Ricochet.component ~/Library/Audio/Plug-Ins/VST3/Ricochet.vst3`
-- Windows : copier `Ricochet.vst3` dans `C:\Program Files\Common Files\VST3`.
+- macOS : copier `Reckless Ricochet.component` dans `~/Library/Audio/Plug-Ins/Components` et `Reckless Ricochet.vst3` dans `~/Library/Audio/Plug-Ins/VST3`. Les binaires ne sont pas notarisés : si macOS les bloque, lancer
+  `xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/Components/"Reckless Ricochet.component" ~/Library/Audio/Plug-Ins/VST3/"Reckless Ricochet.vst3"`
+- Windows : copier `Reckless Ricochet.vst3` dans `C:\Program Files\Common Files\VST3`.
 
 ## Compiler
 
@@ -87,10 +87,10 @@ La simulation tourne dans le thread audio, sans allocation, de façon détermini
 
 ## Licence
 
-AGPL-3.0 (Ricochet est construit avec [JUCE](https://juce.com), lui-même distribué sous AGPLv3 pour les projets open source).
+AGPL-3.0 (Reckless Ricochet est construit avec [JUCE](https://juce.com), lui-même distribué sous AGPLv3 pour les projets open source).
 
 ---
 
 ### English summary
 
-Ricochet is a generative instrument plug-in (VST3, AU, Standalone). Place obstacles of 8 shapes, set their size, rotation and spin, drop ball emitters, aim them and pick their tempo-synced rate. Every collision triggers that obstacle's note on one of 8 built-in synth engines (scale-quantised, optional grid quantise, MIDI out). Ships with 168 presets, a seeded randomiser with locks, real-time recording and offline bounce to 24-bit WAV, with drag & drop of takes into your DAW. Colours follow the notes being played.
+Reckless Ricochet is a generative instrument plug-in (VST3, AU, Standalone). Place obstacles of 8 shapes, set their size, rotation and spin, drop ball emitters, aim them and pick their tempo-synced rate. Every collision triggers that obstacle's note on one of 8 built-in synth engines (scale-quantised, optional grid quantise, MIDI out). Ships with 168 presets, a seeded randomiser with locks, real-time recording and offline bounce to 24-bit WAV, with drag & drop of takes into your DAW. Colours follow the notes being played.

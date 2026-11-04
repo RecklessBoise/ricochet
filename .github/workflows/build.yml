@@ -36,14 +36,14 @@ jobs:
         run: |
           mkdir -p dist
           cd build/Ricochet_artefacts/Release
-          codesign --force --deep -s - AU/Ricochet.component VST3/Ricochet.vst3 Standalone/Ricochet.app
-          ditto -c -k --keepParent AU/Ricochet.component "$GITHUB_WORKSPACE/dist/Ricochet-macOS-AU.zip"
-          ditto -c -k --keepParent VST3/Ricochet.vst3 "$GITHUB_WORKSPACE/dist/Ricochet-macOS-VST3.zip"
-          ditto -c -k --keepParent Standalone/Ricochet.app "$GITHUB_WORKSPACE/dist/Ricochet-macOS-Standalone.zip"
+          codesign --force --deep -s - "AU/Reckless Ricochet.component" "VST3/Reckless Ricochet.vst3" "Standalone/Reckless Ricochet.app"
+          ditto -c -k --keepParent "AU/Reckless Ricochet.component" "$GITHUB_WORKSPACE/dist/RecklessRicochet-macOS-AU.zip"
+          ditto -c -k --keepParent "VST3/Reckless Ricochet.vst3" "$GITHUB_WORKSPACE/dist/RecklessRicochet-macOS-VST3.zip"
+          ditto -c -k --keepParent "Standalone/Reckless Ricochet.app" "$GITHUB_WORKSPACE/dist/RecklessRicochet-macOS-Standalone.zip"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Ricochet-macOS
+          name: RecklessRicochet-macOS
           path: dist/*.zip
 
       - name: Release
@@ -72,12 +72,12 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          Compress-Archive -Path build/Ricochet_artefacts/Release/VST3/Ricochet.vst3 -DestinationPath dist/Ricochet-Windows-VST3.zip
-          Compress-Archive -Path build/Ricochet_artefacts/Release/Standalone/Ricochet.exe -DestinationPath dist/Ricochet-Windows-Standalone.zip
+          Compress-Archive -Path 'build/Ricochet_artefacts/Release/VST3/Reckless Ricochet.vst3' -DestinationPath dist/RecklessRicochet-Windows-VST3.zip
+          Compress-Archive -Path 'build/Ricochet_artefacts/Release/Standalone/Reckless Ricochet.exe' -DestinationPath dist/RecklessRicochet-Windows-Standalone.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Ricochet-Windows
+          name: RecklessRicochet-Windows
           path: dist/*.zip
 
       - name: Release

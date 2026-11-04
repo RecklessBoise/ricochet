@@ -23,7 +23,7 @@ juce_add_plugin(Ricochet
     PLUGIN_MANUFACTURER_CODE Rckb
     PLUGIN_CODE Rcht
     FORMATS ${RICOCHET_FORMATS}
-    PRODUCT_NAME "Ricochet"
+    PRODUCT_NAME "Reckless Ricochet"
     IS_SYNTH TRUE
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE

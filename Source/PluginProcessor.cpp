@@ -366,7 +366,7 @@ bool RicochetProcessor::startBounce (double bars)
 
     bounceThread = std::make_unique<FunctionThread> ([this, s, snd, bs]
     {
-        const auto file = ric::newRecordingFile ("Ricochet_Bounce");
+        const auto file = ric::newRecordingFile ("RecklessRicochet_Bounce");
         const bool ok = ric::bounceSceneToWav (s, snd, bs, file, &bounceProgress);
         {
             const juce::ScopedLock sl (bounceLock);

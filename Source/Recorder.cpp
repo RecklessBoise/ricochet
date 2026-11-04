@@ -22,7 +22,7 @@ bool Recorder::start()
 {
     stop();
 
-    auto file = ric::newRecordingFile ("Ricochet");
+    auto file = ric::newRecordingFile ("RecklessRicochet");
     auto writer = ric::createWavWriter (file, sampleRate);
     if (writer == nullptr)
         return false;

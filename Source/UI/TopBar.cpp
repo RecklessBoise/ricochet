@@ -97,7 +97,7 @@ void TopBar::toggleRecord()
     }
     else if (! rec.start())
     {
-        juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, "Ricochet",
+        juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, "Reckless Ricochet",
                                                 "Could not create a recording file in\n" + ric::recordingsFolder().getFullPathName());
     }
 }
@@ -165,7 +165,7 @@ void TopBar::savePreset()
         if (safe == nullptr || safe->saveDialog == nullptr) return;
         const auto name = safe->saveDialog->getTextEditorContents ("name").trim();
         if (result == 1 && name.isNotEmpty() && ! safe->processor.saveCurrentAsUserPreset (name))
-            juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, "Ricochet", "Could not save the preset.");
+            juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, "Reckless Ricochet", "Could not save the preset.");
         safe->saveDialog.reset();
     }), false);
 }
@@ -174,11 +174,15 @@ void TopBar::paint (juce::Graphics& g)
 {
     g.fillAll (Theme::bg);
 
-    // Logo: letters lit by the current ambient (note) colour.
+    // Logo: "RECKLESS" small above "RICOCHET", letters lit by the current ambient (note) colour.
     const juce::String word ("RICOCHET");
     const auto amb = canvas.getAmbientColour();
     auto r = logoArea.toFloat();
-    g.setFont (Theme::font (22.0f, true));
+    auto top = r.removeFromTop (r.getHeight() * 0.36f);
+    g.setFont (Theme::font (10.0f, true));
+    g.setColour (Theme::accent2.interpolatedWith (amb, 0.3f));
+    g.drawText ("R E C K L E S S", top, juce::Justification::centredLeft);
+    g.setFont (Theme::font (20.0f, true));
     const float cw = r.getWidth() / (float) word.length();
     for (int i = 0; i < word.length(); ++i)
     {
